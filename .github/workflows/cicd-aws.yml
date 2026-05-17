@@ -9,7 +9,7 @@ on:
   workflow_dispatch:
 
 env:
-  AWS_REGION: ${{ secrets.AWS_REGION }}
+  AWS_REGION: us-east-1
   ECR_USERS_REPOSITORY: fcg-users-api
   ECR_CATALOG_REPOSITORY: fcg-catalog-api
   ECR_PAYMENTS_REPOSITORY: fcg-payments-api
@@ -172,7 +172,7 @@ jobs:
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ secrets.AWS_REGION }}
+          aws-region: us-east-1
 
       - name: Setup kubectl
         uses: azure/setup-kubectl@v4
@@ -180,7 +180,7 @@ jobs:
       - name: Configure kubeconfig for EKS
         run: |
           aws eks update-kubeconfig \
-            --region ${{ secrets.AWS_REGION }} \
+            --region us-east-1 \
             --name ${{ secrets.EKS_CLUSTER_NAME }}
 
       - name: Apply namespace and configmaps
@@ -213,7 +213,7 @@ jobs:
 
       - name: Set image tag from git SHA
         run: |
-          REGISTRY="${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com"
+          REGISTRY="759410591963.dkr.ecr.us-east-1.amazonaws.com"
           SHORT_SHA="${{ github.sha }}"
           SHORT_SHA="${SHORT_SHA:0:7}"
           echo "USERS_IMAGE=${REGISTRY}/fcg-users-api:${SHORT_SHA}"    >> $GITHUB_ENV
