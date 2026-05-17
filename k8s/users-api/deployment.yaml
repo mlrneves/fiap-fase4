@@ -23,7 +23,7 @@ spec:
     spec:
       containers:
         - name: users-api
-          image: AWS_ACCOUNT_ID.dkr.ecr.us-east-2.amazonaws.com/fcg-users-api:latest
+          image: 759410591963.dkr.ecr.us-east-1.amazonaws.com/fcg-users-api:latest
           ports:
             - containerPort: 8080
           envFrom:

@@ -1,0 +1,53 @@
+name: CI — Pull Request Validation
+
+on:
+  pull_request:
+    branches:
+      - main
+      - master
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 8
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Restore users-api
+        run: dotnet restore ./users-api_fase4/FCGUsersAPI.sln
+
+      - name: Build users-api
+        run: dotnet build ./users-api_fase4/FCGUsersAPI.sln --configuration Release --no-restore
+
+      - name: Test users-api
+        run: dotnet test ./users-api_fase4/FCGUsersAPI.sln --configuration Release --no-build --verbosity normal
+
+      - name: Restore catalog-api
+        run: dotnet restore ./catalog-api_fase4/FCGCatalogAPI.sln
+
+      - name: Build catalog-api
+        run: dotnet build ./catalog-api_fase4/FCGCatalogAPI.sln --configuration Release --no-restore
+
+      - name: Test catalog-api
+        run: dotnet test ./catalog-api_fase4/FCGCatalogAPI.sln --configuration Release --no-build --verbosity normal
+
+      - name: Restore payments-api
+        run: dotnet restore ./payments-api_fase4/FCGPaymentsAPI.sln
+
+      - name: Build payments-api
+        run: dotnet build ./payments-api_fase4/FCGPaymentsAPI.sln --configuration Release --no-restore
+
+      - name: Test payments-api
+        run: dotnet test ./payments-api_fase4/FCGPaymentsAPI.sln --configuration Release --no-build --verbosity normal
+
+      - name: Restore gateway
+        run: dotnet restore ./GatewayAPI/GatewayAPI/GatewayAPI.csproj
+
+      - name: Build gateway
+        run: dotnet build ./GatewayAPI/GatewayAPI/GatewayAPI.csproj --configuration Release --no-restore

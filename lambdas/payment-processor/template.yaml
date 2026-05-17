@@ -18,7 +18,7 @@ Parameters:
 
   AwsRegion:
     Type: String
-    Default: us-east-2
+    Default: us-east-1
     Description: Região AWS usada pela Lambda
 
   HttpTimeoutSeconds:

@@ -109,7 +109,7 @@ builder.Services.AddSingleton<IAmazonDynamoDB>(_ =>
 {
     var regionName = builder.Configuration["Aws:Sqs:Region"]
         ?? builder.Configuration["AWS_REGION"]
-        ?? "us-east-2";
+        ?? "us-east-1";
     return new AmazonDynamoDBClient(RegionEndpoint.GetBySystemName(regionName));
 });
 builder.Services.AddScoped<IAuditLogRepository, DynamoDbAuditLogRepository>();

@@ -26,12 +26,15 @@ data:
   DD_VERSION: "1.0.0"
 
   # AWS
-  AWS_REGION: "us-east-2"
-  NOTIFICATIONS_QUEUE_URL: "https://sqs.us-east-2.amazonaws.com/ACCOUNT_ID/fcg-notifications"
-  PURCHASE_CREATED_QUEUE_URL: "https://sqs.us-east-2.amazonaws.com/ACCOUNT_ID/fcg-purchase-created"
+  AWS_REGION: "us-east-1"
+  NOTIFICATIONS_QUEUE_URL: "https://sqs.us-east-1.amazonaws.com/759410591963/fcg-notifications"
+  PURCHASE_CREATED_QUEUE_URL: "https://sqs.us-east-1.amazonaws.com/759410591963/fcg-purchase-created"
 
   # DynamoDB
   DYNAMODB_TABLE_NAME: "fcg-audit-logs"
 
   # Elasticsearch / OpenSearch
-  ELASTICSEARCH_URL: "https://OPENSEARCH_ENDPOINT.us-east-2.es.amazonaws.com"
+  # Substituir pela URL real do Amazon OpenSearch após provisionar o domain
+  # Exemplo: https://search-fcg-abc123.us-east-1.es.amazonaws.com
+  # O valor é obtido em: AWS Console → OpenSearch → Domains → fcg → Endpoint
+  ELASTICSEARCH_URL: "https://OPENSEARCH_ENDPOINT.us-east-1.es.amazonaws.com"

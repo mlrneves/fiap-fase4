@@ -297,7 +297,7 @@ Configure em **Settings → Secrets and variables → Actions**:
 |---|---|
 | `AWS_ACCESS_KEY_ID` | Credencial AWS |
 | `AWS_SECRET_ACCESS_KEY` | Credencial AWS |
-| `AWS_REGION` | Região (ex: `us-east-2`) |
+| `AWS_REGION` | Região (ex: `us-east-1`) |
 | `AWS_ACCOUNT_ID` | ID da conta AWS |
 | `EKS_CLUSTER_NAME` | Nome do cluster EKS |
 | `SQL_SA_PASSWORD` | Senha do SQL Server |

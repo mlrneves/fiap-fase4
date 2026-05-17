@@ -119,7 +119,7 @@ services:
       Jwt__Key: ${JWT_KEY}
       REDIS_CONNECTION: redis:6379
       ELASTICSEARCH_URL: http://elasticsearch:9200
-      Aws__Sqs__Region: ${AWS_REGION:-us-east-2}
+      Aws__Sqs__Region: ${AWS_REGION:-us-east-1}
       DD_AGENT_HOST: datadog-agent
       DD_TRACE_AGENT_PORT: "8126"
       DD_TRACE_ENABLED: "true"

@@ -41,14 +41,14 @@ namespace Infrastructure.Services
             var cached = _cache.GetString(CacheKey);
             if (cached is not null)
             {
-                _logger.LogInformation("[Cache HIT] Jogos retornados do cache. Key={CacheKey}", CacheKey);
+                _logger.LogInformation("CACHE HIT - Lista de jogos recuperada do Redis.");
                 return JsonSerializer.Deserialize<List<GameDto>>(cached)!;
             }
 
-            _logger.LogInformation("[Cache MISS] Cache não encontrado. Consultando banco de dados. Key={CacheKey}", CacheKey);
+            _logger.LogInformation("CACHE MISS - Lista de jogos não encontrada no Redis. Consultando banco de dados.");
             var games = _gameRepository.ObterTodos().Select(MapToDto).ToList();
             _cache.SetString(CacheKey, JsonSerializer.Serialize(games), CacheOptions);
-            _logger.LogInformation("[Cache SET] {Count} jogo(s) armazenados no cache. Key={CacheKey} TTL=5min", games.Count, CacheKey);
+            _logger.LogInformation("CACHE SET - Lista de jogos armazenada no Redis.");
             return games;
         }
 
@@ -61,7 +61,7 @@ namespace Infrastructure.Services
         public override Game Cadastrar(Game game)
         {
             base.Cadastrar(game);
-            _logger.LogInformation("[Cache INVALIDADO] Jogo criado. Cache removido. GameId={GameId} Key={CacheKey}", game.Id, CacheKey);
+            _logger.LogInformation("CACHE INVALIDATED - Cache da lista de jogos removido após alteração no catálogo.");
             _cache.Remove(CacheKey);
             _ = _searchService.IndexGameAsync(game);
             _ = _auditLogRepository.AddAsync(new AuditLog
@@ -77,7 +77,7 @@ namespace Infrastructure.Services
         public override Game Alterar(Game game)
         {
             base.Alterar(game);
-            _logger.LogInformation("[Cache INVALIDADO] Jogo atualizado. Cache removido. GameId={GameId} Key={CacheKey}", game.Id, CacheKey);
+            _logger.LogInformation("CACHE INVALIDATED - Cache da lista de jogos removido após alteração no catálogo.");
             _cache.Remove(CacheKey);
             _ = _searchService.IndexGameAsync(game);
             _ = _auditLogRepository.AddAsync(new AuditLog
@@ -93,7 +93,7 @@ namespace Infrastructure.Services
         public override void Deletar(int id)
         {
             base.Deletar(id);
-            _logger.LogInformation("[Cache INVALIDADO] Jogo removido. Cache removido. GameId={GameId} Key={CacheKey}", id, CacheKey);
+            _logger.LogInformation("CACHE INVALIDATED - Cache da lista de jogos removido após alteração no catálogo.");
             _cache.Remove(CacheKey);
             _ = _searchService.RemoveGameAsync(id);
             _ = _auditLogRepository.AddAsync(new AuditLog

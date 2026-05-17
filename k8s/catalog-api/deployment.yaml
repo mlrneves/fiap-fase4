@@ -23,7 +23,7 @@ spec:
     spec:
       containers:
         - name: catalog-api
-          image: AWS_ACCOUNT_ID.dkr.ecr.us-east-2.amazonaws.com/fcg-catalog-api:latest
+          image: 759410591963.dkr.ecr.us-east-1.amazonaws.com/fcg-catalog-api:latest
           ports:
             - containerPort: 8080
           envFrom:
