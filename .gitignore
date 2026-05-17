@@ -2,3 +2,10 @@
 bin/
 obj/
 TestResults/
+.claude/
+.cursor/
+.vscode/
+.idea/
+*.log
+temp/
+tmp/

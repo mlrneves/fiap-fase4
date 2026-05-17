@@ -3,6 +3,7 @@ using Core.Input;
 using Core.Repository;
 using Core.Services;
 using Microsoft.Extensions.Caching.Distributed;
+using Microsoft.Extensions.Logging;
 using System.Text.Json;
 
 namespace Infrastructure.Services
@@ -19,27 +20,35 @@ namespace Infrastructure.Services
         private readonly IDistributedCache _cache;
         private readonly ISearchService _searchService;
         private readonly IAuditLogRepository _auditLogRepository;
+        private readonly ILogger<GameService> _logger;
 
         public GameService(
             IGameRepository gameRepository,
             IDistributedCache cache,
             ISearchService searchService,
-            IAuditLogRepository auditLogRepository) : base(gameRepository)
+            IAuditLogRepository auditLogRepository,
+            ILogger<GameService> logger) : base(gameRepository)
         {
             _gameRepository = gameRepository;
             _cache = cache;
             _searchService = searchService;
             _auditLogRepository = auditLogRepository;
+            _logger = logger;
         }
 
         public IList<GameDto> ObterTodosDto()
         {
             var cached = _cache.GetString(CacheKey);
             if (cached is not null)
+            {
+                _logger.LogInformation("[Cache HIT] Jogos retornados do cache. Key={CacheKey}", CacheKey);
                 return JsonSerializer.Deserialize<List<GameDto>>(cached)!;
+            }
 
+            _logger.LogInformation("[Cache MISS] Cache não encontrado. Consultando banco de dados. Key={CacheKey}", CacheKey);
             var games = _gameRepository.ObterTodos().Select(MapToDto).ToList();
             _cache.SetString(CacheKey, JsonSerializer.Serialize(games), CacheOptions);
+            _logger.LogInformation("[Cache SET] {Count} jogo(s) armazenados no cache. Key={CacheKey} TTL=5min", games.Count, CacheKey);
             return games;
         }
 
@@ -52,6 +61,7 @@ namespace Infrastructure.Services
         public override Game Cadastrar(Game game)
         {
             base.Cadastrar(game);
+            _logger.LogInformation("[Cache INVALIDADO] Jogo criado. Cache removido. GameId={GameId} Key={CacheKey}", game.Id, CacheKey);
             _cache.Remove(CacheKey);
             _ = _searchService.IndexGameAsync(game);
             _ = _auditLogRepository.AddAsync(new AuditLog
@@ -67,6 +77,7 @@ namespace Infrastructure.Services
         public override Game Alterar(Game game)
         {
             base.Alterar(game);
+            _logger.LogInformation("[Cache INVALIDADO] Jogo atualizado. Cache removido. GameId={GameId} Key={CacheKey}", game.Id, CacheKey);
             _cache.Remove(CacheKey);
             _ = _searchService.IndexGameAsync(game);
             _ = _auditLogRepository.AddAsync(new AuditLog
@@ -82,6 +93,7 @@ namespace Infrastructure.Services
         public override void Deletar(int id)
         {
             base.Deletar(id);
+            _logger.LogInformation("[Cache INVALIDADO] Jogo removido. Cache removido. GameId={GameId} Key={CacheKey}", id, CacheKey);
             _cache.Remove(CacheKey);
             _ = _searchService.RemoveGameAsync(id);
             _ = _auditLogRepository.AddAsync(new AuditLog

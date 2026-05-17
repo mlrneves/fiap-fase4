@@ -5,6 +5,7 @@ using Core.Services;
 using FluentAssertions;
 using Infrastructure.Services;
 using Microsoft.Extensions.Caching.Distributed;
+using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using System.Text;
 using System.Text.Json;
@@ -19,7 +20,8 @@ public class GameServiceTests
     private readonly Mock<IAuditLogRepository> _auditMock = new();
 
     private GameService CreateService() =>
-        new(_repoMock.Object, _cacheMock.Object, _searchMock.Object, _auditMock.Object);
+        new(_repoMock.Object, _cacheMock.Object, _searchMock.Object, _auditMock.Object,
+            NullLogger<GameService>.Instance);
 
     private static byte[] Serialize<T>(T value) =>
         Encoding.UTF8.GetBytes(JsonSerializer.Serialize(value));

@@ -29,31 +29,31 @@ jobs:
           dotnet-version: 8.0.x
 
       - name: Restore users-api solution
-        run: dotnet restore ./users-api_fase3/FCGUsersAPI.sln
+        run: dotnet restore ./users-api_fase4/FCGUsersAPI.sln
 
       - name: Build users-api solution
-        run: dotnet build ./users-api_fase3/FCGUsersAPI.sln --configuration Release --no-restore
+        run: dotnet build ./users-api_fase4/FCGUsersAPI.sln --configuration Release --no-restore
 
       - name: Test users-api solution
-        run: dotnet test ./users-api_fase3/FCGUsersAPI.sln --configuration Release --no-build --verbosity normal
+        run: dotnet test ./users-api_fase4/FCGUsersAPI.sln --configuration Release --no-build --verbosity normal
 
       - name: Restore catalog-api solution
-        run: dotnet restore ./catalog-api_fase3/FCGCatalogAPI.sln
+        run: dotnet restore ./catalog-api_fase4/FCGCatalogAPI.sln
 
       - name: Build catalog-api solution
-        run: dotnet build ./catalog-api_fase3/FCGCatalogAPI.sln --configuration Release --no-restore
+        run: dotnet build ./catalog-api_fase4/FCGCatalogAPI.sln --configuration Release --no-restore
 
       - name: Test catalog-api solution
-        run: dotnet test ./catalog-api_fase3/FCGCatalogAPI.sln --configuration Release --no-build --verbosity normal
+        run: dotnet test ./catalog-api_fase4/FCGCatalogAPI.sln --configuration Release --no-build --verbosity normal
 
       - name: Restore payments-api solution
-        run: dotnet restore ./payments-api_fase3/FCGPaymentsAPI.sln
+        run: dotnet restore ./payments-api_fase4/FCGPaymentsAPI.sln
 
       - name: Build payments-api solution
-        run: dotnet build ./payments-api_fase3/FCGPaymentsAPI.sln --configuration Release --no-restore
+        run: dotnet build ./payments-api_fase4/FCGPaymentsAPI.sln --configuration Release --no-restore
 
       - name: Test payments-api solution
-        run: dotnet test ./payments-api_fase3/FCGPaymentsAPI.sln --configuration Release --no-build --verbosity normal
+        run: dotnet test ./payments-api_fase4/FCGPaymentsAPI.sln --configuration Release --no-build --verbosity normal
 
       - name: Restore gateway solution
         run: dotnet restore ./GatewayAPI/GatewayAPI/GatewayAPI.csproj
@@ -96,21 +96,21 @@ jobs:
 
       - name: Build and push users-api image
         run: |
-          docker build -t ${{ env.USERS_IMAGE }} ./users-api_fase3
+          docker build -t ${{ env.USERS_IMAGE }} ./users-api_fase4
           docker tag ${{ env.USERS_IMAGE }} ${{ env.REGISTRY }}/${{ env.ECR_USERS_REPOSITORY }}:latest
           docker push ${{ env.USERS_IMAGE }}
           docker push ${{ env.REGISTRY }}/${{ env.ECR_USERS_REPOSITORY }}:latest
 
       - name: Build and push catalog-api image
         run: |
-          docker build -t ${{ env.CATALOG_IMAGE }} ./catalog-api_fase3
+          docker build -t ${{ env.CATALOG_IMAGE }} ./catalog-api_fase4
           docker tag ${{ env.CATALOG_IMAGE }} ${{ env.REGISTRY }}/${{ env.ECR_CATALOG_REPOSITORY }}:latest
           docker push ${{ env.CATALOG_IMAGE }}
           docker push ${{ env.REGISTRY }}/${{ env.ECR_CATALOG_REPOSITORY }}:latest
 
       - name: Build and push payments-api image
         run: |
-          docker build -t ${{ env.PAYMENTS_IMAGE }} ./payments-api_fase3
+          docker build -t ${{ env.PAYMENTS_IMAGE }} ./payments-api_fase4
           docker tag ${{ env.PAYMENTS_IMAGE }} ${{ env.REGISTRY }}/${{ env.ECR_PAYMENTS_REPOSITORY }}:latest
           docker push ${{ env.PAYMENTS_IMAGE }}
           docker push ${{ env.REGISTRY }}/${{ env.ECR_PAYMENTS_REPOSITORY }}:latest

@@ -1,56 +1,82 @@
-# FCG Fase 3
+# FCG Fase 4
 
-Projeto da **FIAP Cloud Games (FCG)** para a Fase 3, com foco em **microsserviços**, **serverless**, **API Gateway**, **audit log**, **observabilidade** e **CI/CD**.
+Projeto da **FIAP Cloud Games (FCG)** para a Fase 4, com foco em **automação de entrega (CI/CD)**, **persistência poliglota (NoSQL + Cache + Busca)**, **Kubernetes gerenciado na cloud** e **performance**.
 
 ## Objetivo do projeto
 
-Esta solução evolui o sistema anterior para uma arquitetura distribuída com:
-- **3 microsserviços principais**:
-  - `users-api_fase3`
-  - `catalog-api_fase3`
-  - `payments-api_fase3`
+Esta solução evolui o sistema da Fase 4 para uma arquitetura Cloud-Native com:
+
+- **3 microsserviços principais** em .NET 8:
+  - `users-api_fase4`
+  - `catalog-api_fase4`
+  - `payments-api_fase4`
 - **API Gateway** implementado com **YARP em ASP.NET Core**
 - **2 Lambdas AWS** para processamento assíncrono:
   - `notification-center`
   - `payment-processor`
-- **Audit log** para rastreabilidade de mudanças
-- **Observabilidade** com **Datadog**, logs estruturados e traces
-- **CI/CD** com **GitHub Actions**
-- **Containerização** com **Docker** e **docker-compose**
-
-> Neste projeto, o requisito de API Gateway foi atendido com um gateway próprio em .NET usando **YARP**, em vez do serviço gerenciado da AWS.
+- **Persistência Poliglota**:
+  - **SQL Server** — dados relacionais (usuários, jogos, compras, pagamentos)
+  - **DynamoDB** — audit logs de eventos (NoSQL, alta volumetria)
+  - **Redis** — cache distribuído de consultas (TTL 5 minutos)
+  - **Elasticsearch / Amazon OpenSearch** — busca avançada com fuzzy search
+- **Kubernetes gerenciado** (AWS EKS) com rolling update sem downtime
+- **CI/CD** com **GitHub Actions** (build → test → push ECR → deploy EKS)
+- **Security Scan** de imagens Docker com **Trivy**
+- **Observabilidade** com **Datadog**, logs estruturados e traces distribuídos
 
 ---
 
 ## Estrutura do repositório
 
 ```text
-FCG-fase3/
+fiap-fase4/
 ├── .github/
 │   └── workflows/
-│       └── cicd-aws.yml
+│       └── cicd-aws.yml          # Pipeline CI/CD completo
 ├── GatewayAPI/
 │   ├── GatewayAPI.sln
 │   ├── README.md
 │   └── GatewayAPI/
-├── users-api_fase3/
+├── users-api_fase4/
 │   ├── FCGUsersAPI.sln
 │   ├── README.md
-│   └── UsersAPI/
-├── catalog-api_fase3/
+│   ├── UsersAPI/
+│   ├── Core/
+│   ├── Infrastructure/
+│   └── Tests/
+├── catalog-api_fase4/
 │   ├── FCGCatalogAPI.sln
 │   ├── README.md
-│   └── CatalogAPI/
-├── payments-api_fase3/
+│   ├── CatalogAPI/
+│   ├── Core/
+│   ├── Infrastructure/
+│   └── Tests/
+├── payments-api_fase4/
 │   ├── FCGPaymentsAPI.sln
 │   ├── README.md
-│   └── PaymentsAPI/
+│   ├── PaymentsAPI/
+│   ├── Core/
+│   ├── Infrastructure/
+│   └── Tests/
 ├── lambdas/
 │   ├── notification-center/
 │   └── payment-processor/
+├── k8s/                          # Manifestos Kubernetes
+│   ├── namespace.yaml
+│   ├── secrets.yaml
+│   ├── configmaps/
+│   │   ├── fcg-config.yaml
+│   │   └── gateway-yarp-config.yaml
+│   ├── users-api/
+│   ├── catalog-api/
+│   ├── payments-api/
+│   ├── gateway-api/
+│   ├── sqlserver/
+│   ├── redis/
+│   └── datadog/
 └── observability/
-    ├── docker-compose.yml
-    └── docker-compose.aws.yml
+    ├── docker-compose.yml        # Dev local (com Redis e Elasticsearch)
+    └── docker-compose.aws.yml   # Imagens ECR
 ```
 
 ---
@@ -58,71 +84,76 @@ FCG-fase3/
 ## Componentes da arquitetura
 
 ### 1. Users API
-Responsável por:
-- cadastro de usuários
-- autenticação via JWT
-- autorização
-- publicação de eventos em SQS quando necessário
-- auditoria de ações
 
-Pasta: `users-api_fase3`
+Responsável por:
+- cadastro e autenticação de usuários via JWT
+- autorização baseada em roles (User / Admin)
+- publicação de eventos de registro no SQS (`fcg-notifications`)
+- audit log de ações
+
+Pasta: `users-api_fase4`
 
 ### 2. Catalog API
-Responsável por:
-- catálogo de jogos/produtos
-- consulta e compra
-- integração com fluxo assíncrono de compra
-- atualização de status da compra
 
-Pasta: `catalog-api_fase3`
+Responsável por:
+- catálogo de jogos (CRUD)
+- compras e biblioteca do usuário
+- promoções
+- **cache distribuído com Redis** (TTL 5 min, invalidado em escrita)
+- **busca avançada com Elasticsearch** (fuzzy search, ordenação por relevância)
+- **audit log no DynamoDB** (criação, alteração e remoção de jogos)
+- indexação automática no Elasticsearch a cada inserção/edição
+
+Pasta: `catalog-api_fase4`
 
 ### 3. Payments API
-Responsável por:
-- processamento de pagamentos
-- registro de transações
-- retorno de status do pagamento
-- integração com fluxo distribuído
 
-Pasta: `payments-api_fase3`
+Responsável por:
+- processamento de pagamentos (simulado: 80% aprovação, 20% rejeição)
+- registro de transações
+- integração com fluxo distribuído via Lambda
+
+Pasta: `payments-api_fase4`
 
 ### 4. API Gateway com YARP
+
 Responsável por:
 - centralizar entrada das requisições
 - rotear chamadas para os microsserviços
-- expor URLs únicas para acesso externo
-- simplificar consumo dos serviços na EC2
+- expor a aplicação via Load Balancer no Kubernetes
 
 Pasta: `GatewayAPI`
 
 Rotas configuradas:
-- `/users/*` -> `users-api`
-- `/games/*` -> `catalog-api`
-- `/payments/*` -> `payments-api`
+- `/users/*` → `users-api`
+- `/games/*` → `catalog-api`
+- `/payments/*` → `payments-api`
 
 ### 5. Lambda `notification-center`
-Responsável por:
-- consumir mensagens da fila `fcg-notifications`
-- processar eventos assíncronos
-- simular envio de notificações via log
+
+- fila de entrada: `fcg-notifications`
+- trigger automático SQS → Lambda
+- saída: logs no CloudWatch
 
 Pasta: `lambdas/notification-center`
 
 ### 6. Lambda `payment-processor`
-Responsável por:
-- consumir mensagens da fila `fcg-purchase-created`
-- processar pagamento de forma assíncrona
-- chamar internamente o `PaymentsAPI`
-- atualizar o `CatalogAPI`
-- publicar evento na fila `fcg-notifications`
+
+- fila de entrada: `fcg-purchase-created`
+- trigger automático SQS → Lambda
+- chama `PaymentsAPI` e `CatalogAPI` internamente
+- publica resultado em `fcg-notifications`
 
 Pasta: `lambdas/payment-processor`
 
-### 7. Observabilidade
-Responsável por:
-- subir SQL Server, Datadog Agent e containers da aplicação
-- padronizar execução local e em cloud via Docker Compose
+### 7. Kubernetes (EKS)
 
-Pasta: `observability`
+Manifestos em `k8s/`:
+- Deployments com rolling update (`maxUnavailable=0`, `maxSurge=1`)
+- Secrets gerenciados via CI/CD (sem hardcode em YAML)
+- ConfigMaps para variáveis de ambiente não sensíveis
+- Redis e SQL Server provisionados no cluster
+- Datadog DaemonSet para observabilidade
 
 ---
 
@@ -130,34 +161,36 @@ Pasta: `observability`
 
 ### Fluxo principal de compra
 
-1. O cliente chama o **API Gateway**.
-2. O Gateway encaminha para o microsserviço correto.
-3. No fluxo de compra, o **Catalog API** registra a intenção de compra.
+1. O cliente chama o **API Gateway** (Load Balancer EKS).
+2. O Gateway (YARP) encaminha para o microsserviço correto.
+3. No fluxo de compra, o **Catalog API** registra a intenção de compra no SQL Server.
 4. O **Catalog API** publica um evento na fila **`fcg-purchase-created`**.
-5. A Lambda **`payment-processor`** é acionada automaticamente por trigger SQS.
-6. A Lambda chama o **Payments API** para processar o pagamento.
-7. A Lambda chama o **Catalog API** para atualizar o resultado do pagamento.
-8. A Lambda publica um evento na fila **`fcg-notifications`**.
-9. A Lambda **`notification-center`** é acionada automaticamente por trigger SQS.
-10. A notificação é registrada em log no CloudWatch.
+5. A Lambda **`payment-processor`** é acionada automaticamente.
+6. A Lambda chama o **Payments API** internamente.
+7. A Lambda chama o **Catalog API** para atualizar o status.
+8. A Lambda publica resultado em **`fcg-notifications`**.
+9. A Lambda **`notification-center`** processa e registra no CloudWatch.
 
 ### Fluxo resumido em diagrama
 
 ```mermaid
 flowchart LR
-    Client[Cliente / Swagger / Consumidor] --> Gateway[API Gateway - YARP]
+    Client[Cliente / Swagger] --> LB[Load Balancer EKS]
+    LB --> Gateway[API Gateway - YARP]
     Gateway --> Users[Users API]
     Gateway --> Catalog[Catalog API]
     Gateway --> Payments[Payments API]
 
+    Catalog -->|GET todos os jogos| Redis[(Redis Cache)]
+    Catalog -->|Busca fuzzy| ES[(Elasticsearch)]
+    Catalog -->|Audit log| DDB[(DynamoDB)]
+
     Catalog -->|envia evento| SQS1[SQS: fcg-purchase-created]
-    SQS1 -->|trigger automático| LambdaPay[Lambda: payment-processor]
-
-    LambdaPay -->|HTTP interno + x-internal-api-key| Payments
-    LambdaPay -->|HTTP interno + x-internal-api-key| Catalog
-
+    SQS1 -->|trigger| LambdaPay[Lambda: payment-processor]
+    LambdaPay -->|HTTP interno| Payments
+    LambdaPay -->|HTTP interno| Catalog
     LambdaPay -->|publica evento| SQS2[SQS: fcg-notifications]
-    SQS2 -->|trigger automático| LambdaNotif[Lambda: notification-center]
+    SQS2 -->|trigger| LambdaNotif[Lambda: notification-center]
 
     Users --> SQL[(SQL Server)]
     Catalog --> SQL
@@ -168,423 +201,188 @@ flowchart LR
     Payments --> DD
 ```
 
----
+### Pipeline CI/CD
 
-## URLs publicadas na AWS
-
-### Microsserviços diretamente
-- Users API: `http://3.139.59.8:5001/swagger/index.html`
-- Catalog API: `http://3.139.59.8:5002/swagger/index.html`
-- Payments API: `http://3.139.59.8:5003/swagger/index.html`
-
-### API Gateway
-- Users: `http://3.139.59.8:5000/users/swagger/index.html`
-- Games/Catalog: `http://3.139.59.8:5000/games/swagger/index.html`
-- Payments: `http://3.139.59.8:5000/payments/swagger/index.html`
-
-> Internamente, o gateway usa nomes de host Docker:
-> - `users-api`
-> - `catalog-api`
-> - `payments-api`
-
----
-
-## Pré-requisitos
-
-Para trabalhar localmente e também preparar o deploy:
-
-- .NET SDK 8
-- Docker
-- Docker Compose
-- AWS CLI
-- Git
-- acesso a uma conta AWS
-- acesso ao Datadog
-- permissões para criar:
-  - SQS
-  - Lambda
-  - IAM Role/Policy
-  - ECR
-  - EC2
-
----
-
-## O que configurar após clonar o projeto
-
-Depois do clone, revise os seguintes pontos.
-
-### 1. Variáveis do `observability/.env`
-O `docker-compose.aws.yml` depende de variáveis externas. Crie ou ajuste o arquivo `.env` em `observability/` com valores reais para:
-
-```env
-SQL_SA_PASSWORD=
-DD_API_KEY=
-DD_SITE=
-JWT_ISSUER=
-JWT_KEY=
-INTERNAL_API_KEY=
-AWS_REGION=
-NOTIFICATIONS_QUEUE_URL=
-PURCHASE_CREATED_QUEUE_URL=
-ADMIN_NAME=
-ADMIN_EMAIL=
-ADMIN_PASSWORD=
-USERS_API_IMAGE=
-CATALOG_API_IMAGE=
-PAYMENTS_API_IMAGE=
-GATEWAY_API_IMAGE=
+```mermaid
+flowchart LR
+    Push[git push main] --> Build[Build & Test]
+    Build --> Trivy[Security Scan - Trivy]
+    Trivy --> Push2[Push ECR]
+    Push2 --> Deploy[Deploy EKS Rolling Update]
+    Deploy --> Status[Rollout Status Check]
 ```
 
-#### Significado das variáveis
-- `SQL_SA_PASSWORD`: senha do SQL Server
-- `DD_API_KEY`: chave do Datadog
-- `DD_SITE`: site do Datadog, por exemplo `datadoghq.com`
-- `JWT_ISSUER`: emissor do token JWT
-- `JWT_KEY`: chave do JWT compartilhada pelos serviços
-- `INTERNAL_API_KEY`: chave usada no header `x-internal-api-key`
-- `AWS_REGION`: região AWS usada por filas e lambdas
-- `NOTIFICATIONS_QUEUE_URL`: URL da fila `fcg-notifications`
-- `PURCHASE_CREATED_QUEUE_URL`: URL da fila `fcg-purchase-created`
-- `ADMIN_NAME`, `ADMIN_EMAIL`, `ADMIN_PASSWORD`: usuário administrador inicial
-- `*_IMAGE`: imagens publicadas no ECR para o ambiente AWS/EC2
+---
 
-### 2. `appsettings.json`
-Os projetos trazem valores de desenvolvimento e placeholders. Revise:
-- `UsersAPI/appsettings.json`
-- `CatalogAPI/appsettings.json`
-- `PaymentsAPI/appsettings.json`
-- `GatewayAPI/appsettings.json`
+## Persistência Poliglota
 
-Troque ou sobrescreva por variável de ambiente principalmente:
-- connection strings
-- JWT
-- internal api key
-- URLs de filas SQS
-
-> Em produção, prefira **variáveis de ambiente** e não segredos fixos em arquivo.
-
-### 3. URLs internas para a Lambda `payment-processor`
-Na AWS, a Lambda precisa receber por variável de ambiente:
-
-- `PAYMENTS_API_BASE_URL`
-- `CATALOG_API_BASE_URL`
-- `INTERNAL_API_KEY`
-- `NOTIFICATIONS_QUEUE_URL`
-- `AWS_REGION`
-
-Essas URLs devem apontar para os endpoints internos usados pela Lambda.
-
-### 4. GitHub Secrets para CI/CD
-O workflow `.github/workflows/cicd-aws.yml` depende de secrets no GitHub. Configure no repositório:
-
-```text
-AWS_ACCESS_KEY_ID
-AWS_SECRET_ACCESS_KEY
-AWS_REGION
-```
-
-Também revise se o workflow precisa de secrets adicionais conforme sua estratégia de deploy.
+| Tecnologia | Uso | Serviço |
+|---|---|---|
+| SQL Server | Dados relacionais (usuários, jogos, compras, pagamentos) | Todos |
+| Redis | Cache de listagem de jogos (TTL 5 min) | Catalog API |
+| DynamoDB | Audit logs de criação/alteração/remoção de jogos | Catalog API |
+| Elasticsearch | Índice de busca com fuzzy search e relevância | Catalog API |
 
 ---
 
 ## Como rodar localmente
 
-### Opção 1. Subir tudo com Docker Compose local
+### Pré-requisitos
+
+- .NET SDK 8
+- Docker e Docker Compose
+
+### Subir todos os serviços
+
 Na pasta `observability`:
 
 ```bash
+cp .env.example .env   # preencha as variáveis
 docker compose up --build
 ```
 
-Esse arquivo usa o `docker-compose.yml` local, com build a partir dos projetos.
+O `docker-compose.yml` local sobe:
+- SQL Server 2022
+- Redis 7
+- Elasticsearch 8.13.4
+- Datadog Agent
+- Users API (porta 5001)
+- Catalog API (porta 5002)
+- Payments API (porta 5003)
 
-### Opção 2. Rodar projetos individualmente
-Você também pode abrir cada solução e executar separadamente:
-- `users-api_fase3/FCGUsersAPI.sln`
-- `catalog-api_fase3/FCGCatalogAPI.sln`
-- `payments-api_fase3/FCGPaymentsAPI.sln`
-- `GatewayAPI/GatewayAPI.sln`
-
----
-
-## Como subir na AWS/EC2
-
-### 1. Publicar imagens no ECR
-O pipeline `cicd-aws.yml` já contempla build, testes e push das imagens. Os repositórios utilizados no workflow são:
-
-- `fcg-users-api`
-- `fcg-catalog-api`
-- `fcg-payments-api`
-- `fcg-gateway-api`
-
-### 2. Atualizar `observability/.env` na EC2
-Na EC2, configure:
-- nomes completos das imagens do ECR
-- filas SQS reais
-- chave JWT
-- Datadog
-- senha do SQL Server
-- chave interna entre serviços
-
-### 3. Subir os containers na EC2
-Na pasta `observability`:
+### Testar a busca Elasticsearch
 
 ```bash
-docker compose -f docker-compose.aws.yml up -d
+GET http://localhost:5002/api/games/search?q=zelda
 ```
 
-Esse arquivo sobe:
-- `sqlserver`
-- `datadog-agent`
-- `gateway-api`
-- `users-api`
-- `catalog-api`
-- `payments-api`
+Suporta fuzzy search — `"zeld"`, `"Zeldaa"` e `"zelda"` retornam resultados.
 
----
-
-## Segurança entre os microsserviços
-
-O projeto usa mais de um mecanismo de proteção:
-
-### Acesso externo
-- o acesso principal é feito via **API Gateway**
-- endpoints públicos podem usar **JWT**
-
-### Acesso interno
-- integrações internas usam o header:
-  - `x-internal-api-key`
-
-### Observações
-- a chave interna precisa ser igual entre quem chama e quem recebe
-- a Lambda `payment-processor` também precisa enviar essa chave nas chamadas para `CatalogAPI` e `PaymentsAPI`
-
----
-
-## Observabilidade e rastreamento
-
-A solução inclui:
-- **Serilog** para logs estruturados
-- **Datadog Agent** para coleta
-- **DD_TRACE** habilitado nos containers
-- **Correlation ID** para rastreabilidade ponta a ponta
-
-No `docker-compose.aws.yml`, os serviços já recebem variáveis como:
-- `DD_AGENT_HOST`
-- `DD_TRACE_AGENT_PORT`
-- `DD_TRACE_ENABLED`
-- `DD_LOGS_INJECTION`
-- `DD_ENV`
-- `DD_SERVICE`
-- `DD_VERSION`
-
----
-
-## Audit log / rastreabilidade de mudanças
-
-O desafio pede event sourcing ou equivalente, como temporal tables, audit logs ou mecanismo semelhante.
-
-Nesta solução, esse requisito é atendido por **audit log**, registrando mudanças relevantes no estado do sistema.
-
-Para apresentação, destaque:
-- criação e alteração de entidades
-- logs de ações sensíveis
-- correlação entre requisição, serviço e operação
-
----
-
-## Lambdas e filas SQS
-
-### `notification-center`
-- fila de entrada: `fcg-notifications`
-- trigger automático: SQS -> Lambda
-- saída: logs no CloudWatch
-
-### `payment-processor`
-- fila de entrada: `fcg-purchase-created`
-- trigger automático: SQS -> Lambda
-- chamadas internas:
-  - `PaymentsAPI`
-  - `CatalogAPI`
-- fila de saída:
-  - `fcg-notifications`
-
----
-
-## Como publicar as Lambdas
-
-### Notification Center
-A lambda `notification-center` usa `template.yaml` com:
-- criação da fila `fcg-notifications`
-- função `fcg-notification-center`
-- evento SQS configurado no próprio template
-
-### Payment Processor
-A lambda `payment-processor` usa `template.yaml` com:
-- criação da fila `fcg-purchase-created`
-- função `fcg-payment-processor`
-- trigger SQS configurado no template
-- permissão para enviar mensagens à fila `fcg-notifications`
-
-### Fluxo recomendado de publicação
-1. publicar `notification-center`
-2. obter:
-   - `NotificationQueueUrl`
-   - `NotificationQueueArn`
-3. publicar `payment-processor` informando esses valores como parâmetros
-4. validar trigger automático das duas lambdas
-
-> Como o desafio permite CLI, CloudFormation, SAM ou equivalente, esta abordagem atende ao requisito.
-
----
-
-## Exemplo de deploy com SAM
-
-### Notification Center
-Na pasta `lambdas/notification-center`:
+### Testar o cache Redis
 
 ```bash
-sam build
-sam deploy --guided
+# Primeira chamada — Cache MISS (vai ao banco)
+GET http://localhost:5002/api/games
+
+# Segunda chamada — Cache HIT (retorna do Redis)
+GET http://localhost:5002/api/games
 ```
 
-### Payment Processor
-Na pasta `lambdas/payment-processor`:
+Observe nos logs: `[Cache HIT]` / `[Cache MISS]` / `[Cache SET]` / `[Cache INVALIDADO]`.
+
+### Testar audit log DynamoDB
 
 ```bash
-sam build
-sam deploy --guided
+# Após criar/editar um jogo:
+GET http://localhost:5002/api/audit-logs?entityType=Game
 ```
 
-Na publicação da `payment-processor`, informe:
-- `PaymentsApiBaseUrl`
-- `CatalogApiBaseUrl`
-- `InternalApiKey`
-- `AwsRegion`
-- `NotificationsQueueUrl`
-- `NotificationsQueueArn`
+---
+
+## Deploy na AWS (EKS)
+
+### Pré-requisitos AWS
+
+- AWS CLI configurado
+- Cluster EKS provisionado
+- Amazon OpenSearch domain criado
+- DynamoDB table `fcg-audit-logs` criada (hash key: `Id` / GSI: `EntityName-index`)
+- Repositórios ECR criados (ou deixe o CI/CD criá-los)
+
+### GitHub Secrets necessários
+
+Configure em **Settings → Secrets and variables → Actions**:
+
+| Secret | Descrição |
+|---|---|
+| `AWS_ACCESS_KEY_ID` | Credencial AWS |
+| `AWS_SECRET_ACCESS_KEY` | Credencial AWS |
+| `AWS_REGION` | Região (ex: `us-east-2`) |
+| `AWS_ACCOUNT_ID` | ID da conta AWS |
+| `EKS_CLUSTER_NAME` | Nome do cluster EKS |
+| `SQL_SA_PASSWORD` | Senha do SQL Server |
+| `JWT_KEY` | Chave JWT compartilhada |
+| `ADMIN_PASSWORD` | Senha do usuário admin inicial |
+| `INTERNAL_API_KEY` | Chave interna entre serviços |
+| `DD_API_KEY` | Chave do Datadog |
+
+### Atualizar ConfigMap antes do deploy
+
+Em `k8s/configmaps/fcg-config.yaml`, substitua:
+- `OPENSEARCH_ENDPOINT` → URL real do Amazon OpenSearch
+- `ACCOUNT_ID` nas URLs SQS → ID real da conta AWS
+
+### O que o pipeline faz automaticamente
+
+Push para `main` dispara o workflow `.github/workflows/cicd-aws.yml`:
+
+1. Build e testes (`dotnet test`) — inclui unit tests do `GameService`, `UserService` e `PaymentService`
+2. Security scan com **Trivy** (HIGH/CRITICAL, non-blocking)
+3. Push das imagens para **ECR** com tag `SHA` + `latest`
+4. Apply dos manifestos K8s
+5. `kubectl set image` → rolling update sem downtime
+6. `kubectl rollout status` → aguarda confirmação
+
+---
+
+## Segurança
+
+- **Zero hardcoded credentials**: `appsettings.json` tem valores vazios; secrets chegam via K8s Secrets injetados pelo CI/CD
+- **Acesso externo**: via JWT Bearer + API Gateway
+- **Acesso interno** entre serviços: header `x-internal-api-key`
+- **Security Scan**: Trivy verifica imagens em cada pipeline
+
+---
+
+## Observabilidade
+
+- **Serilog** — logs estruturados JSON
+- **Datadog Agent** — DaemonSet no cluster, coleta APM, logs e métricas
+- **Correlation ID** — rastreabilidade ponta a ponta entre serviços
+- **Logs de cache** — `[Cache HIT]`, `[Cache MISS]`, `[Cache SET]`, `[Cache INVALIDADO]`
 
 ---
 
 ## Testes
 
-### Microsserviços
-Execute em cada solução:
-
 ```bash
-dotnet test
-```
+# CatalogAPI (7 testes: 5 unit + 2 integração)
+dotnet test catalog-api_fase4/FCGCatalogAPI.sln
 
-### Lambdas
-Execute dentro da pasta da lambda correspondente:
+# UsersAPI (6 testes: 4 unit + 2 integração)
+dotnet test users-api_fase4/FCGUsersAPI.sln
 
-```bash
-dotnet test
+# PaymentsAPI (7 testes: 5 unit + 2 integração)
+dotnet test payments-api_fase4/FCGPaymentsAPI.sln
 ```
 
 ---
 
-## CI/CD
+## Checklist de entrega
 
-Arquivo principal:
-- `.github/workflows/cicd-aws.yml`
+### Infraestrutura
+- [ ] Cluster EKS ativo com pods rodando
+- [ ] ECR com imagens publicadas
+- [ ] Amazon OpenSearch domain ativo
+- [ ] DynamoDB table `fcg-audit-logs` criada com GSI
+- [ ] Redis rodando no cluster
+- [ ] Load Balancer / Gateway acessível externamente
 
-O workflow realiza:
-- checkout
-- setup do .NET 8
-- restore
-- build
-- testes
-- login na AWS
-- login no ECR
-- garantia de criação dos repositórios ECR
-- build e push das imagens
+### Pipeline
+- [ ] Push para `main` dispara o pipeline automaticamente
+- [ ] Testes unitários passando no CI
+- [ ] Trivy scan executando
+- [ ] Rolling update concluindo sem downtime
 
----
+### Funcionalidades
+- [ ] `GET /api/games` retorna do cache (log `[Cache HIT]` na 2ª chamada)
+- [ ] `GET /api/games/search?q=` retorna com fuzzy search
+- [ ] `GET /api/audit-logs?entityType=Game` retorna logs do DynamoDB
+- [ ] Fluxo de compra assíncrono validado ponta a ponta
 
-## O que precisa ser conferido antes da entrega
-
-### Itens funcionais
-- [ ] Users API funcionando
-- [ ] Catalog API funcionando
-- [ ] Payments API funcionando
-- [ ] Gateway YARP roteando corretamente
-- [ ] Datadog coletando logs e traces
-- [ ] Audit log funcionando
-- [ ] `notification-center` publicada e acionando por SQS
-- [ ] `payment-processor` publicada e acionando por SQS
-- [ ] fluxo de compra assíncrono validado ponta a ponta
-
-### Itens de documentação
-- [ ] README raiz preenchido e revisado
-- [ ] READMEs dos projetos consistentes com a arquitetura atual
-- [ ] diagrama de arquitetura incluído
-- [ ] fluxo de comunicação descrito
-- [ ] relatório final com links preparado
-
-### Itens de repositório
-- [ ] remover `.vs`, `bin`, `obj`, `.git` internos e arquivos desnecessários
-- [ ] remover arquivos sensíveis do repositório
-- [ ] revisar `.gitignore`
-- [ ] confirmar se a estratégia de repositórios atende à exigência da fase
-
----
-
-## Pontos de atenção
-
-### 1. README do Gateway
-O README atual do Gateway menciona `docker-compose.gateway-example.yml`, mas esse arquivo não está presente. Ajustar para não deixar documentação inconsistente.
-
-### 2. Arquivos sensíveis
-Revise e remova do versionamento, se necessário:
-- `.env`
-- chaves `.pem`
-- artefatos de build
-- arquivos `.vs`
-- diretórios `bin/` e `obj/`
-
-### 3. Repositórios separados
-O enunciado cita três microsserviços em repositórios diferentes. Se a entrega final continuar em monorepo, vale justificar a organização atual e, se possível, disponibilizar os serviços também de forma separada.
-
----
-
-## Como apresentar no vídeo
-
-Sugestão de narrativa:
-1. mostrar arquitetura geral
-2. mostrar os 3 microsserviços
-3. mostrar Gateway YARP roteando
-4. mostrar observabilidade no Datadog
-5. mostrar audit log
-6. mostrar fila `fcg-purchase-created`
-7. mostrar `payment-processor` processando de forma assíncrona
-8. mostrar fila `fcg-notifications`
-9. mostrar `notification-center` consumindo automaticamente
-10. mostrar CI/CD no GitHub Actions
-11. mostrar execução na cloud
-
----
-
-## Entregáveis finais da fase
-
-Além do código, preparar:
-- vídeo de até 15 minutos
-- documentação com fluxo e arquitetura
-- README completo
-- relatório PDF ou TXT com:
-  - nome do grupo
-  - participantes
-  - usernames no Discord
-  - link da documentação
-  - links dos repositórios
-  - link do vídeo
-
----
-
-## Observação final
-
-Este README foi preparado com base na estrutura atual do projeto, nos arquivos presentes no repositório e na arquitetura atual informada, considerando:
-- API Gateway com YARP em .NET
-- `docker-compose.aws.yml` como orquestração da EC2
-- Lambdas publicadas via AWS CLI/SAM
-- uso de Datadog, audit log, CI/CD e SQS no fluxo assíncrono
+### Vídeo (até 25 min)
+- [ ] Mostrar pods no EKS
+- [ ] Live deploy (push → pipeline → rollout)
+- [ ] Demo da busca avançada (fuzzy)
+- [ ] Demo do cache (cache hit vs miss nos logs)
+- [ ] Demo do DynamoDB (audit logs)

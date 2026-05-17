@@ -47,7 +47,7 @@ services:
 
   users-api:
     build:
-      context: ../users-api_fase3
+      context: ../users-api_fase4
       dockerfile: Dockerfile
     container_name: fcg-users-api
     ports:
@@ -106,7 +106,7 @@ services:
 
   catalog-api:
     build:
-      context: ../catalog-api_fase3
+      context: ../catalog-api_fase4
       dockerfile: Dockerfile
     container_name: fcg-catalog-api
     ports:
@@ -149,7 +149,7 @@ services:
 
   payments-api:
     build:
-      context: ../payments-api_fase3
+      context: ../payments-api_fase4
       dockerfile: Dockerfile
     container_name: fcg-payments-api
     ports:
