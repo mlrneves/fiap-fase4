@@ -1,0 +1,45 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: FCG - Notification Center Lambda consuming notifications from SQS.
+
+Parameters:
+  NotificationQueueName:
+    Type: String
+    Default: fcg-notifications
+
+Resources:
+  NotificationQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: !Ref NotificationQueueName
+      VisibilityTimeout: 60
+
+  NotificationCenterFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: fcg-notification-center
+      CodeUri: src/FCG.NotificationCenterLambda/
+      Handler: FCG.NotificationCenterLambda::FCG.NotificationCenterLambda.Function::FunctionHandler
+      Runtime: dotnet8
+      MemorySize: 512
+      Timeout: 30
+      Policies:
+        - AWSLambdaBasicExecutionRole
+      Events:
+        NotificationQueueEvent:
+          Type: SQS
+          Properties:
+            Queue: !GetAtt NotificationQueue.Arn
+            BatchSize: 10
+            FunctionResponseTypes:
+              - ReportBatchItemFailures
+
+Outputs:
+  NotificationQueueUrl:
+    Value: !Ref NotificationQueue
+
+  NotificationQueueArn:
+    Value: !GetAtt NotificationQueue.Arn
+
+  NotificationCenterFunctionName:
+    Value: !Ref NotificationCenterFunction

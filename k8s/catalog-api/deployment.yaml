@@ -1,0 +1,98 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: catalog-api
+  namespace: fcg
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: catalog-api
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
+  template:
+    metadata:
+      labels:
+        app: catalog-api
+        tags.datadoghq.com/service: "fcg-catalog-api"
+        tags.datadoghq.com/env: "production"
+        tags.datadoghq.com/version: "1.0.0"
+    spec:
+      containers:
+        - name: catalog-api
+          image: AWS_ACCOUNT_ID.dkr.ecr.us-east-2.amazonaws.com/fcg-catalog-api:latest
+          ports:
+            - containerPort: 8080
+          envFrom:
+            - configMapRef:
+                name: fcg-config
+          env:
+            - name: ConnectionStrings__ConnectionString
+              valueFrom:
+                secretKeyRef:
+                  name: fcg-secrets
+                  key: CATALOG_CONNECTION_STRING
+            - name: Jwt__Key
+              valueFrom:
+                secretKeyRef:
+                  name: fcg-secrets
+                  key: JWT_KEY
+            - name: InternalApi__ApiKey
+              valueFrom:
+                secretKeyRef:
+                  name: fcg-secrets
+                  key: INTERNAL_API_KEY
+            - name: DD_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: fcg-secrets
+                  key: DD_API_KEY
+            - name: DD_SERVICE
+              value: "fcg-catalog-api"
+            - name: Aws__Sqs__Region
+              valueFrom:
+                configMapKeyRef:
+                  name: fcg-config
+                  key: AWS_REGION
+            - name: Aws__Sqs__PurchaseCreatedQueueUrl
+              valueFrom:
+                configMapKeyRef:
+                  name: fcg-config
+                  key: PURCHASE_CREATED_QUEUE_URL
+            - name: Redis__ConnectionString
+              valueFrom:
+                secretKeyRef:
+                  name: fcg-secrets
+                  key: REDIS_CONNECTION
+            - name: Elasticsearch__Url
+              valueFrom:
+                configMapKeyRef:
+                  name: fcg-config
+                  key: ELASTICSEARCH_URL
+            - name: DynamoDB__TableName
+              valueFrom:
+                configMapKeyRef:
+                  name: fcg-config
+                  key: DYNAMODB_TABLE_NAME
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "100m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 20
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 30
+            periodSeconds: 15

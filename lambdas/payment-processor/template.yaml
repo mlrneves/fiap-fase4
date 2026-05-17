@@ -1,0 +1,89 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: FCG - Payment processor Lambda consuming SQS
+
+Parameters:
+  PaymentsApiBaseUrl:
+    Type: String
+    Description: Base URL do PaymentsAPI interno
+
+  CatalogApiBaseUrl:
+    Type: String
+    Description: Base URL do CatalogAPI interno
+
+  InternalApiKey:
+    Type: String
+    NoEcho: true
+    Description: Chave usada no header x-internal-api-key
+
+  AwsRegion:
+    Type: String
+    Default: us-east-2
+    Description: Região AWS usada pela Lambda
+
+  HttpTimeoutSeconds:
+    Type: Number
+    Default: 30
+
+  NotificationsQueueUrl:
+    Type: String
+    Description: URL da fila fcg-notifications criada pela NotificationCenterLambda
+
+  NotificationsQueueArn:
+    Type: String
+    Description: ARN da fila fcg-notifications criada pela NotificationCenterLambda
+
+  PurchaseCreatedQueueName:
+    Type: String
+    Default: fcg-purchase-created
+    Description: Nome da fila de entrada de compras
+
+Resources:
+  PurchaseCreatedQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: !Ref PurchaseCreatedQueueName
+      VisibilityTimeout: 60
+
+  PaymentProcessorFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: fcg-payment-processor
+      CodeUri: src/Fcg.PaymentProcessorLambda/
+      Handler: Fcg.PaymentProcessorLambda::Fcg.PaymentProcessorLambda.Function::FunctionHandler
+      Runtime: dotnet8
+      MemorySize: 512
+      Timeout: 60
+      Environment:
+        Variables:
+          AWS_REGION: !Ref AwsRegion
+          PAYMENTS_API_BASE_URL: !Ref PaymentsApiBaseUrl
+          CATALOG_API_BASE_URL: !Ref CatalogApiBaseUrl
+          INTERNAL_API_KEY: !Ref InternalApiKey
+          NOTIFICATIONS_QUEUE_URL: !Ref NotificationsQueueUrl
+          HTTP_TIMEOUT_SECONDS: !Ref HttpTimeoutSeconds
+      Policies:
+        - AWSLambdaBasicExecutionRole
+        - Statement:
+            - Effect: Allow
+              Action:
+                - sqs:SendMessage
+              Resource: !Ref NotificationsQueueArn
+      Events:
+        PurchaseCreatedQueueEvent:
+          Type: SQS
+          Properties:
+            Queue: !GetAtt PurchaseCreatedQueue.Arn
+            BatchSize: 10
+            FunctionResponseTypes:
+              - ReportBatchItemFailures
+
+Outputs:
+  PurchaseCreatedQueueUrl:
+    Value: !Ref PurchaseCreatedQueue
+
+  PurchaseCreatedQueueArn:
+    Value: !GetAtt PurchaseCreatedQueue.Arn
+
+  PaymentProcessorFunctionName:
+    Value: !Ref PaymentProcessorFunction

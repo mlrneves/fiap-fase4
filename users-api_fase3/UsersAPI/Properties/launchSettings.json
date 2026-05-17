@@ -1,0 +1,62 @@
+﻿{
+  "$schema": "http://json.schemastore.org/launchsettings.json",
+  "iisSettings": {
+    "windowsAuthentication": false,
+    "anonymousAuthentication": true,
+    "iisExpress": {
+      "applicationUrl": "http://localhost:64010",
+      "sslPort": 44370
+    }
+  },
+  "profiles": {
+    "http": {
+      "commandName": "Project",
+      "dotnetRunMessages": true,
+      "launchBrowser": true,
+      "launchUrl": "swagger",
+      "applicationUrl": "http://localhost:5008",
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "DD_AGENT_HOST": "localhost",
+        "DD_TRACE_AGENT_PORT": "8126",
+        "DD_ENV": "dev",
+        "DD_SERVICE": "fcg-users-api",
+        "DD_VERSION": "1.0.0",
+        "DD_LOGS_INJECTION": "true",
+        "DD_API_KEY": "SUA_API_KEY_DATADOG"
+      }
+    },
+    "https": {
+      "commandName": "Project",
+      "dotnetRunMessages": true,
+      "launchBrowser": true,
+      "launchUrl": "swagger",
+      "applicationUrl": "https://localhost:7114;http://localhost:5008",
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "DD_AGENT_HOST": "localhost",
+        "DD_TRACE_AGENT_PORT": "8126",
+        "DD_ENV": "dev",
+        "DD_SERVICE": "fcg-users-api",
+        "DD_VERSION": "1.0.0",
+        "DD_LOGS_INJECTION": "true",
+        "DD_API_KEY": "SUA_API_KEY_DATADOG"
+      }
+    },
+    "IIS Express": {
+      "commandName": "IISExpress",
+      "launchBrowser": true,
+      "launchUrl": "swagger",
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "DD_AGENT_HOST": "172.20.208.1",
+        "DD_TRACE_AGENT_PORT": "8126",
+        "DD_ENV": "dev",
+        "DD_SERVICE": "fcg-users-api",
+        "DD_VERSION": "1.0.0",
+        "DD_LOGS_INJECTION": "true",
+        "DD_API_KEY": "470a9e0e5516cf4609d31adf5461b209"
+      }
+    }
+  }
+}

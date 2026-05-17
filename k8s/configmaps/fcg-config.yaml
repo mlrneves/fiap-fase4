@@ -1,0 +1,37 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: fcg-config
+  namespace: fcg
+data:
+  ASPNETCORE_ENVIRONMENT: "Production"
+  ASPNETCORE_URLS: "http://+:8080"
+
+  # JWT
+  JWT_ISSUER: "FCG"
+
+  # Admin user (nome e e-mail não são sensíveis)
+  ADMIN_NAME: "Admin"
+  ADMIN_EMAIL: "admin@fcg.com"
+
+  # Datadog
+  DD_SITE: "us5.datadoghq.com"
+  DD_AGENT_HOST: "datadog-agent"
+  DD_TRACE_AGENT_PORT: "8126"
+  DD_TRACE_ENABLED: "true"
+  DD_TRACE_DEBUG: "false"
+  DD_TRACE_STARTUP_LOGS: "true"
+  DD_LOGS_INJECTION: "true"
+  DD_ENV: "production"
+  DD_VERSION: "1.0.0"
+
+  # AWS
+  AWS_REGION: "us-east-2"
+  NOTIFICATIONS_QUEUE_URL: "https://sqs.us-east-2.amazonaws.com/ACCOUNT_ID/fcg-notifications"
+  PURCHASE_CREATED_QUEUE_URL: "https://sqs.us-east-2.amazonaws.com/ACCOUNT_ID/fcg-purchase-created"
+
+  # DynamoDB
+  DYNAMODB_TABLE_NAME: "fcg-audit-logs"
+
+  # Elasticsearch / OpenSearch
+  ELASTICSEARCH_URL: "https://OPENSEARCH_ENDPOINT.us-east-2.es.amazonaws.com"

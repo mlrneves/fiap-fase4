@@ -1,0 +1,14 @@
+{
+  "Information": [
+    "Default arguments for the Lambda command line tools.",
+    "This file is used by Amazon.Lambda.Tools."
+  ],
+  "profile": "",
+  "region": "us-east-1",
+  "configuration": "Release",
+  "framework": "net8.0",
+  "function-runtime": "dotnet8",
+  "function-memory-size": 512,
+  "function-timeout": 60,
+  "function-handler": "Fcg.PaymentProcessorLambda::Fcg.PaymentProcessorLambda.Function::FunctionHandler"
+}

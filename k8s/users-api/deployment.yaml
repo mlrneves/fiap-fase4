@@ -1,0 +1,88 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: users-api
+  namespace: fcg
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: users-api
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
+  template:
+    metadata:
+      labels:
+        app: users-api
+        tags.datadoghq.com/service: "fcg-users-api"
+        tags.datadoghq.com/env: "production"
+        tags.datadoghq.com/version: "1.0.0"
+    spec:
+      containers:
+        - name: users-api
+          image: AWS_ACCOUNT_ID.dkr.ecr.us-east-2.amazonaws.com/fcg-users-api:latest
+          ports:
+            - containerPort: 8080
+          envFrom:
+            - configMapRef:
+                name: fcg-config
+          env:
+            - name: ConnectionStrings__ConnectionString
+              valueFrom:
+                secretKeyRef:
+                  name: fcg-secrets
+                  key: USERS_CONNECTION_STRING
+            - name: Jwt__Key
+              valueFrom:
+                secretKeyRef:
+                  name: fcg-secrets
+                  key: JWT_KEY
+            - name: AdminUser__Password
+              valueFrom:
+                secretKeyRef:
+                  name: fcg-secrets
+                  key: ADMIN_PASSWORD
+            - name: InternalApi__ApiKey
+              valueFrom:
+                secretKeyRef:
+                  name: fcg-secrets
+                  key: INTERNAL_API_KEY
+            - name: DD_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: fcg-secrets
+                  key: DD_API_KEY
+            - name: DD_SERVICE
+              value: "fcg-users-api"
+            - name: Aws__Sqs__Region
+              valueFrom:
+                configMapKeyRef:
+                  name: fcg-config
+                  key: AWS_REGION
+            - name: Aws__Sqs__NotificationsQueueUrl
+              valueFrom:
+                configMapKeyRef:
+                  name: fcg-config
+                  key: NOTIFICATIONS_QUEUE_URL
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "100m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 20
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 30
+            periodSeconds: 15

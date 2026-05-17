@@ -1,0 +1,184 @@
+services:
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: fcg-sqlserver
+    hostname: sqlserver
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_PID: "Developer"
+      MSSQL_SA_PASSWORD: ${SQL_SA_PASSWORD}
+    ports:
+      - "1433:1433"
+    healthcheck:
+      test: ["CMD-SHELL", "bash -c '</dev/tcp/127.0.0.1/1433' || exit 1"]
+      interval: 15s
+      timeout: 10s
+      retries: 20
+    networks:
+      - fcg-network
+
+  datadog-agent:
+    image: gcr.io/datadoghq/agent:latest
+    container_name: datadog-agent
+    hostname: datadog-agent
+    environment:
+      DD_API_KEY: ${DD_API_KEY}
+      DD_SITE: ${DD_SITE}
+      DD_HOSTNAME: fcg-observability
+      DD_APM_ENABLED: "true"
+      DD_APM_NON_LOCAL_TRAFFIC: "true"
+      DD_LOGS_ENABLED: "true"
+      DD_LOG_LEVEL: "debug"
+      DD_LOGS_INJECTION: "true"
+      DD_LOGS_CONFIG_CONTAINER_COLLECT_ALL: "true"
+      DD_CONTAINER_EXCLUDE: "name:datadog-agent"
+      DD_TRACE_ENABLED: "true"
+      DD_DOGSTATSD_NON_LOCAL_TRAFFIC: "true"
+      DD_LOGS_CONFIG_BATCH_WAIT: "1"
+    ports:
+      - "8126:8126"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+      - /proc/:/host/proc/:ro
+      - /sys/fs/cgroup/:/host/sys/fs/cgroup:ro
+    networks:
+      - fcg-network
+
+  gateway-api:
+    image: ${GATEWAY_API_IMAGE}
+    container_name: fcg-gateway-api
+    hostname: gateway-api
+    ports:
+      - "5000:8080"
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_URLS: http://+:8080
+    depends_on:
+      users-api:
+        condition: service_started
+      catalog-api:
+        condition: service_started
+      payments-api:
+        condition: service_started
+    networks:
+      - fcg-network
+
+  users-api:
+    image: ${USERS_API_IMAGE}
+    container_name: fcg-users-api
+    hostname: users-api
+    ports:
+      - "5001:8080"
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_URLS: http://+:8080
+      ConnectionStrings__ConnectionString: Server=sqlserver;Database=FCGUsers;User Id=sa;Password=${SQL_SA_PASSWORD};TrustServerCertificate=True
+      Jwt__Issuer: ${JWT_ISSUER}
+      Jwt__Key: ${JWT_KEY}
+      InternalApi__ApiKey: ${INTERNAL_API_KEY}
+      Aws__Sqs__Region: ${AWS_REGION}
+      Aws__Sqs__NotificationsQueueUrl: ${NOTIFICATIONS_QUEUE_URL}
+      AdminUser__Name: ${ADMIN_NAME}
+      AdminUser__Email: ${ADMIN_EMAIL}
+      AdminUser__Password: ${ADMIN_PASSWORD}
+      DD_AGENT_HOST: datadog-agent
+      DD_TRACE_AGENT_PORT: "8126"
+      DD_TRACE_ENABLED: "true"
+      DD_TRACE_DEBUG: "true"
+      DD_TRACE_STARTUP_LOGS: "true"
+      DD_ENV: dev
+      DD_SERVICE: fcg-users-api
+      DD_VERSION: "1.0.0"
+      DD_LOGS_INJECTION: "true"
+      DD_API_KEY: ${DD_API_KEY}
+      DD_SITE: ${DD_SITE}
+    labels:
+      com.datadoghq.tags.service: "fcg-users-api"
+      com.datadoghq.tags.env: "dev"
+      com.datadoghq.tags.version: "1.0.0"
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+      datadog-agent:
+        condition: service_started
+    networks:
+      - fcg-network
+
+  catalog-api:
+    image: ${CATALOG_API_IMAGE}
+    container_name: fcg-catalog-api
+    hostname: catalog-api
+    ports:
+      - "5002:8080"
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_URLS: http://+:8080
+      ConnectionStrings__ConnectionString: Server=sqlserver;Database=FCGCatalog;User Id=sa;Password=${SQL_SA_PASSWORD};TrustServerCertificate=True
+      Jwt__Issuer: ${JWT_ISSUER}
+      Jwt__Key: ${JWT_KEY}
+      InternalApi__ApiKey: ${INTERNAL_API_KEY}
+      Aws__Sqs__Region: ${AWS_REGION}
+      Aws__Sqs__PurchaseCreatedQueueUrl: ${PURCHASE_CREATED_QUEUE_URL}
+      DD_AGENT_HOST: datadog-agent
+      DD_TRACE_AGENT_PORT: "8126"
+      DD_TRACE_ENABLED: "true"
+      DD_TRACE_DEBUG: "true"
+      DD_TRACE_STARTUP_LOGS: "true"
+      DD_ENV: dev
+      DD_SERVICE: fcg-catalog-api
+      DD_VERSION: "1.0.0"
+      DD_LOGS_INJECTION: "true"
+      DD_API_KEY: ${DD_API_KEY}
+      DD_SITE: ${DD_SITE}
+    labels:
+      com.datadoghq.tags.service: "fcg-catalog-api"
+      com.datadoghq.tags.env: "dev"
+      com.datadoghq.tags.version: "1.0.0"
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+      datadog-agent:
+        condition: service_started
+    networks:
+      - fcg-network
+
+  payments-api:
+    image: ${PAYMENTS_API_IMAGE}
+    container_name: fcg-payments-api
+    hostname: payments-api
+    ports:
+      - "5003:8080"
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_URLS: http://+:8080
+      ConnectionStrings__ConnectionString: Server=sqlserver;Database=FCGPayments;User Id=sa;Password=${SQL_SA_PASSWORD};TrustServerCertificate=True
+      Jwt__Issuer: ${JWT_ISSUER}
+      Jwt__Key: ${JWT_KEY}
+      InternalApi__ApiKey: ${INTERNAL_API_KEY}
+      DD_AGENT_HOST: datadog-agent
+      DD_TRACE_AGENT_PORT: "8126"
+      DD_TRACE_ENABLED: "true"
+      DD_TRACE_DEBUG: "true"
+      DD_TRACE_STARTUP_LOGS: "true"
+      DD_ENV: dev
+      DD_SERVICE: fcg-payments-api
+      DD_VERSION: "1.0.0"
+      DD_LOGS_INJECTION: "true"
+      DD_API_KEY: ${DD_API_KEY}
+      DD_SITE: ${DD_SITE}
+    labels:
+      com.datadoghq.tags.service: "fcg-payments-api"
+      com.datadoghq.tags.env: "dev"
+      com.datadoghq.tags.version: "1.0.0"
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+      datadog-agent:
+        condition: service_started
+    networks:
+      - fcg-network
+
+networks:
+  fcg-network:
+    driver: bridge
