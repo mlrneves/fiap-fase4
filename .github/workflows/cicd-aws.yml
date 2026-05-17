@@ -184,8 +184,8 @@ jobs:
 
       - name: Apply namespace and configmaps
         run: |
-          kubectl apply -f k8s/namespace.yaml
-          kubectl apply -f k8s/configmaps/
+          kubectl apply -f k8s/namespace.yaml --validate=false
+          kubectl apply -f k8s/configmaps/ --validate=false
 
       - name: Apply / update K8s secrets
         shell: bash
