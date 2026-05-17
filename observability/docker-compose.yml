@@ -84,6 +84,26 @@ services:
     networks:
       - fcg-network
 
+  redis:
+    image: redis:7-alpine
+    container_name: fcg-redis
+    ports:
+      - "6379:6379"
+    networks:
+      - fcg-network
+
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.13.4
+    container_name: fcg-elasticsearch
+    environment:
+      discovery.type: single-node
+      xpack.security.enabled: "false"
+      ES_JAVA_OPTS: "-Xms512m -Xmx512m"
+    ports:
+      - "9200:9200"
+    networks:
+      - fcg-network
+
   catalog-api:
     build:
       context: ../catalog-api_fase3
@@ -97,6 +117,9 @@ services:
       ConnectionStrings__ConnectionString: Server=sqlserver;Database=FCGCatalog;User Id=sa;Password=${SQL_SA_PASSWORD};TrustServerCertificate=True
       Jwt__Issuer: ${JWT_ISSUER}
       Jwt__Key: ${JWT_KEY}
+      REDIS_CONNECTION: redis:6379
+      ELASTICSEARCH_URL: http://elasticsearch:9200
+      Aws__Sqs__Region: ${AWS_REGION:-us-east-2}
       DD_AGENT_HOST: datadog-agent
       DD_TRACE_AGENT_PORT: "8126"
       DD_TRACE_ENABLED: "true"
@@ -116,6 +139,10 @@ services:
       sqlserver:
         condition: service_healthy
       datadog-agent:
+        condition: service_started
+      redis:
+        condition: service_started
+      elasticsearch:
         condition: service_started
     networks:
       - fcg-network
