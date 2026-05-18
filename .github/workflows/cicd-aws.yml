@@ -93,6 +93,14 @@ jobs:
           echo "SHORT_SHA=${SHORT_SHA}" >> $GITHUB_ENV
           echo "REGISTRY=${REGISTRY}"   >> $GITHUB_ENV
 
+      - name: Mirror Redis image to ECR
+        shell: bash
+        run: |
+          aws ecr create-repository --repository-name fcg-redis --region $AWS_REGION 2>/dev/null || true
+          docker pull redis:7-alpine
+          docker tag redis:7-alpine ${{ steps.login-ecr.outputs.registry }}/fcg-redis:latest
+          docker push ${{ steps.login-ecr.outputs.registry }}/fcg-redis:latest
+
       - name: Build and push users-api image
         run: |
           docker build -t ${{ env.USERS_IMAGE }} ./users-api_fase4
