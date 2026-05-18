@@ -252,10 +252,10 @@ jobs:
 
       - name: Wait for rollout to complete
         run: |
-          kubectl rollout status deployment/users-api   -n fcg --timeout=300s
-          kubectl rollout status deployment/catalog-api  -n fcg --timeout=300s
-          kubectl rollout status deployment/payments-api -n fcg --timeout=300s
-          kubectl rollout status deployment/gateway-api  -n fcg --timeout=300s
+          kubectl rollout status deployment/users-api   -n fcg --timeout=600s
+          kubectl rollout status deployment/catalog-api  -n fcg --timeout=600s
+          kubectl rollout status deployment/payments-api -n fcg --timeout=600s
+          kubectl rollout status deployment/gateway-api  -n fcg --timeout=600s
 
       - name: Show pods status
         run: kubectl get pods -n fcg
