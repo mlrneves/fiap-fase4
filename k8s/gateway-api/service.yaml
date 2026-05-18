@@ -3,6 +3,9 @@ kind: Service
 metadata:
   name: gateway-api
   namespace: fcg
+  annotations:
+    service.beta.kubernetes.io/aws-load-balancer-scheme: internet-facing
+    service.beta.kubernetes.io/aws-load-balancer-type: external
 spec:
   selector:
     app: gateway-api
