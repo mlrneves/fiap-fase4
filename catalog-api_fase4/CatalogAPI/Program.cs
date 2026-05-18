@@ -4,7 +4,6 @@ using Amazon.SQS;
 using CatalogAPI.Infra.Middleware;
 using Core.Repository;
 using Core.Services;
-using Elastic.Clients.Elasticsearch;
 using Infrastructure.Configuration;
 using Infrastructure.CrossCutting.Correlation;
 using Infrastructure.Repository;
@@ -94,16 +93,17 @@ builder.Services.AddStackExchangeRedisCache(options =>
 });
 #endregion
 
-#region [Elasticsearch / OpenSearch]
-var elasticsearchUrl = builder.Configuration["Elasticsearch:Url"]
+#region [OpenSearch]
+var openSearchUrl = builder.Configuration["Elasticsearch:Url"]
     ?? builder.Configuration["ELASTICSEARCH_URL"]
     ?? "http://localhost:9200";
 
-var elasticsearchSettings = new ElasticsearchClientSettings(new Uri(elasticsearchUrl))
-    .RequestTimeout(TimeSpan.FromSeconds(10));
-var elasticsearchClient = new ElasticsearchClient(elasticsearchSettings);
-builder.Services.AddSingleton(elasticsearchClient);
-builder.Services.AddScoped<ISearchService, ElasticsearchSearchService>();
+builder.Services.AddHttpClient<ISearchService, ElasticsearchSearchService>(client =>
+{
+    client.BaseAddress = new Uri(openSearchUrl.TrimEnd('/') + "/");
+    client.Timeout = TimeSpan.FromSeconds(10);
+    client.DefaultRequestHeaders.Add("Accept", "application/json");
+});
 #endregion
 
 #region [DynamoDB]
