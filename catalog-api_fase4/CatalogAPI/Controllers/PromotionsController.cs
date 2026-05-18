@@ -18,19 +18,6 @@ namespace FCGApi.Controllers
             _promotionService = promotionService;
         }
 
-        [HttpGet]
-        public IActionResult Get()
-        {
-            try
-            {
-                return Ok(_promotionService.ObterTodosAtivosDto());
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(ex.Message);
-            }
-        }
-
         [HttpGet("{id:int}")]
         public IActionResult Get([FromRoute] int id)
         {
