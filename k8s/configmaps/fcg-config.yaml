@@ -34,7 +34,4 @@ data:
   DYNAMODB_TABLE_NAME: "fcg-audit-logs"
 
   # Elasticsearch / OpenSearch
-  # Substituir pela URL real do Amazon OpenSearch após provisionar o domain
-  # Exemplo: https://search-fcg-abc123.us-east-1.es.amazonaws.com
-  # O valor é obtido em: AWS Console → OpenSearch → Domains → fcg → Endpoint
-  ELASTICSEARCH_URL: "https://OPENSEARCH_ENDPOINT.us-east-1.es.amazonaws.com"
+  ELASTICSEARCH_URL: "https://search-fcg-opensearch-uev6duiynp7uns4uzi66nrytje.us-east-1.es.amazonaws.com"
