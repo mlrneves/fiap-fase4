@@ -63,7 +63,13 @@ namespace Infrastructure.Services
             base.Cadastrar(game);
             _logger.LogInformation("CACHE INVALIDATED - Cache da lista de jogos removido após alteração no catálogo.");
             _cache.Remove(CacheKey);
-            _ = _searchService.IndexGameAsync(game);
+            _ = _searchService.IndexGameAsync(game).ContinueWith(t =>
+            {
+                if (t.IsFaulted)
+                    _logger.LogError(t.Exception, "SEARCH INDEX ERROR - Falha ao indexar jogo {GameId} no OpenSearch.", game.Id);
+                else
+                    _logger.LogInformation("SEARCH INDEX OK - Jogo {GameId} indexado no OpenSearch.", game.Id);
+            });
             _ = _auditLogRepository.AddAsync(new AuditLog
             {
                 EntityName = "Game",
@@ -79,7 +85,13 @@ namespace Infrastructure.Services
             base.Alterar(game);
             _logger.LogInformation("CACHE INVALIDATED - Cache da lista de jogos removido após alteração no catálogo.");
             _cache.Remove(CacheKey);
-            _ = _searchService.IndexGameAsync(game);
+            _ = _searchService.IndexGameAsync(game).ContinueWith(t =>
+            {
+                if (t.IsFaulted)
+                    _logger.LogError(t.Exception, "SEARCH INDEX ERROR - Falha ao indexar jogo {GameId} no OpenSearch.", game.Id);
+                else
+                    _logger.LogInformation("SEARCH INDEX OK - Jogo {GameId} indexado no OpenSearch.", game.Id);
+            });
             _ = _auditLogRepository.AddAsync(new AuditLog
             {
                 EntityName = "Game",
