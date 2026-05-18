@@ -268,7 +268,7 @@ GET http://localhost:5002/api/games
 GET http://localhost:5002/api/games
 ```
 
-Observe nos logs: `[Cache HIT]` / `[Cache MISS]` / `[Cache SET]` / `[Cache INVALIDADO]`.
+Observe nos logs: `CACHE HIT -` / `CACHE MISS -` / `CACHE SET -` / `CACHE INVALIDATED -`.
 
 ### Testar audit log DynamoDB
 
@@ -297,20 +297,12 @@ Configure em **Settings → Secrets and variables → Actions**:
 |---|---|
 | `AWS_ACCESS_KEY_ID` | Credencial AWS |
 | `AWS_SECRET_ACCESS_KEY` | Credencial AWS |
-| `AWS_REGION` | Região (ex: `us-east-1`) |
-| `AWS_ACCOUNT_ID` | ID da conta AWS |
 | `EKS_CLUSTER_NAME` | Nome do cluster EKS |
 | `SQL_SA_PASSWORD` | Senha do SQL Server |
-| `JWT_KEY` | Chave JWT compartilhada |
+| `JWT_KEY` | Chave JWT compartilhada (mínimo 16 caracteres) |
 | `ADMIN_PASSWORD` | Senha do usuário admin inicial |
 | `INTERNAL_API_KEY` | Chave interna entre serviços |
 | `DD_API_KEY` | Chave do Datadog |
-
-### Atualizar ConfigMap antes do deploy
-
-Em `k8s/configmaps/fcg-config.yaml`, substitua:
-- `OPENSEARCH_ENDPOINT` → URL real do Amazon OpenSearch
-- `ACCOUNT_ID` nas URLs SQS → ID real da conta AWS
 
 ### O que o pipeline faz automaticamente
 
@@ -339,7 +331,7 @@ Push para `main` dispara o workflow `.github/workflows/cicd-aws.yml`:
 - **Serilog** — logs estruturados JSON
 - **Datadog Agent** — DaemonSet no cluster, coleta APM, logs e métricas
 - **Correlation ID** — rastreabilidade ponta a ponta entre serviços
-- **Logs de cache** — `[Cache HIT]`, `[Cache MISS]`, `[Cache SET]`, `[Cache INVALIDADO]`
+- **Logs de cache** — `CACHE HIT -`, `CACHE MISS -`, `CACHE SET -`, `CACHE INVALIDATED -`
 
 ---
 
@@ -356,33 +348,3 @@ dotnet test users-api_fase4/FCGUsersAPI.sln
 dotnet test payments-api_fase4/FCGPaymentsAPI.sln
 ```
 
----
-
-## Checklist de entrega
-
-### Infraestrutura
-- [ ] Cluster EKS ativo com pods rodando
-- [ ] ECR com imagens publicadas
-- [ ] Amazon OpenSearch domain ativo
-- [ ] DynamoDB table `fcg-audit-logs` criada com GSI
-- [ ] Redis rodando no cluster
-- [ ] Load Balancer / Gateway acessível externamente
-
-### Pipeline
-- [ ] Push para `main` dispara o pipeline automaticamente
-- [ ] Testes unitários passando no CI
-- [ ] Trivy scan executando
-- [ ] Rolling update concluindo sem downtime
-
-### Funcionalidades
-- [ ] `GET /api/games` retorna do cache (log `[Cache HIT]` na 2ª chamada)
-- [ ] `GET /api/games/search?q=` retorna com fuzzy search
-- [ ] `GET /api/audit-logs?entityType=Game` retorna logs do DynamoDB
-- [ ] Fluxo de compra assíncrono validado ponta a ponta
-
-### Vídeo (até 25 min)
-- [ ] Mostrar pods no EKS
-- [ ] Live deploy (push → pipeline → rollout)
-- [ ] Demo da busca avançada (fuzzy)
-- [ ] Demo do cache (cache hit vs miss nos logs)
-- [ ] Demo do DynamoDB (audit logs)

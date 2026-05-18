@@ -126,7 +126,7 @@ Recursos AWS utilizados:
 - a política de `sqs:SendMessage` deve ser restrita à ARN da fila de notificações
 - esta versão do código não ignora certificados inválidos, o que é mais adequado para publicação em ambiente real
 
-## Aderência ao desafio da fase 3
+## Aderência ao desafio da fase 4
 Esta Lambda atende ao requisito de **Serverless com trigger automático**, pois:
 - é uma AWS Lambda real
 - é acionada automaticamente por SQS

@@ -115,7 +115,7 @@ Recursos AWS utilizados:
 - depende de o payload já conter os dados necessários para montar a mensagem
 - trata apenas alguns tipos de evento explicitamente
 
-## Aderência ao desafio da fase 3
+## Aderência ao desafio da fase 4
 Esta Lambda atende ao requisito de **Serverless com trigger automático**, pois:
 
 - é uma AWS Lambda real

@@ -45,7 +45,7 @@ Faz parte da arquitetura Cloud-Native da Fase 4, com persistência poliglota, ca
 - Chave: `fcg:games:all`
 - TTL: 5 minutos
 - Invalidado automaticamente em `POST`, `PUT` e `DELETE` de jogos
-- Logs: `[Cache HIT]`, `[Cache MISS]`, `[Cache SET]`, `[Cache INVALIDADO]`
+- Logs: `CACHE HIT -`, `CACHE MISS -`, `CACHE SET -`, `CACHE INVALIDATED -`
 
 ### DynamoDB (audit log)
 - Tabela: `fcg-audit-logs`
