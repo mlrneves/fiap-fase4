@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
         - name: redis
-          image: public.ecr.aws/docker/library/redis:7-alpine
+          image: 759410591963.dkr.ecr.us-east-1.amazonaws.com/fcg-redis:latest
           ports:
             - containerPort: 6379
           resources:
