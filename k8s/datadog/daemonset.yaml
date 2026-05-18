@@ -13,6 +13,8 @@ spec:
         app: datadog-agent
     spec:
       serviceAccountName: datadog-agent
+      nodeSelector:
+        datadog-enabled: "true"
       containers:
         - name: datadog-agent
           image: gcr.io/datadoghq/agent:latest
