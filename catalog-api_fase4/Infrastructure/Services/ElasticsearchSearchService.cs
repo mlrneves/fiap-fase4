@@ -4,6 +4,7 @@ using Core.Services;
 using Elastic.Clients.Elasticsearch;
 using Elastic.Clients.Elasticsearch.Mapping;
 using Elastic.Clients.Elasticsearch.QueryDsl;
+using Microsoft.Extensions.Logging;
 
 namespace Infrastructure.Services
 {
@@ -11,10 +12,12 @@ namespace Infrastructure.Services
     {
         private const string IndexName = "fcg-games";
         private readonly ElasticsearchClient _client;
+        private readonly ILogger<ElasticsearchSearchService> _logger;
 
-        public ElasticsearchSearchService(ElasticsearchClient client)
+        public ElasticsearchSearchService(ElasticsearchClient client, ILogger<ElasticsearchSearchService> logger)
         {
             _client = client;
+            _logger = logger;
         }
 
         private async Task EnsureIndexAsync()
@@ -23,7 +26,7 @@ namespace Infrastructure.Services
             if (exists.Exists)
                 return;
 
-            await _client.Indices.CreateAsync(IndexName, c => c
+            var createResp = await _client.Indices.CreateAsync(IndexName, c => c
                 .Mappings(m => m
                     .Properties(new Properties
                     {
@@ -36,6 +39,11 @@ namespace Infrastructure.Services
                     })
                 )
             );
+
+            if (createResp.IsValidResponse)
+                _logger.LogInformation("SEARCH INDEX CREATED - Índice {Index} criado com mappings text.", IndexName);
+            else
+                _logger.LogWarning("SEARCH INDEX CREATE FAILED - {Debug}", createResp.DebugInformation);
         }
 
         public async Task IndexGameAsync(Game game)
@@ -78,7 +86,13 @@ namespace Infrastructure.Services
             );
 
             if (!response.IsValidResponse)
+            {
+                _logger.LogWarning("SEARCH INVALID RESPONSE - {Debug}", response.DebugInformation);
                 return new List<GameDto>();
+            }
+
+            var total = response.Hits.Count;
+            _logger.LogInformation("SEARCH RESULT - {Total} hits para query '{Query}'", total, query);
 
             return response.Documents
                 .Select(d => new GameDto
