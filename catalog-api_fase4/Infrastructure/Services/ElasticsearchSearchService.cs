@@ -2,6 +2,7 @@ using Core.Entity;
 using Core.Input;
 using Core.Services;
 using Elastic.Clients.Elasticsearch;
+using Elastic.Clients.Elasticsearch.Mapping;
 using Elastic.Clients.Elasticsearch.QueryDsl;
 
 namespace Infrastructure.Services
@@ -16,8 +17,31 @@ namespace Infrastructure.Services
             _client = client;
         }
 
+        private async Task EnsureIndexAsync()
+        {
+            var exists = await _client.Indices.ExistsAsync(IndexName);
+            if (exists.Exists)
+                return;
+
+            await _client.Indices.CreateAsync(IndexName, c => c
+                .Mappings(m => m
+                    .Properties(new Properties
+                    {
+                        { "title",       new TextProperty() },
+                        { "description", new TextProperty() },
+                        { "genre",       new TextProperty() },
+                        { "developer",   new TextProperty() },
+                        { "price",       new FloatNumberProperty() },
+                        { "releaseDate", new DateProperty() }
+                    })
+                )
+            );
+        }
+
         public async Task IndexGameAsync(Game game)
         {
+            await EnsureIndexAsync();
+
             var doc = new GameSearchDocument
             {
                 Id = game.Id,
