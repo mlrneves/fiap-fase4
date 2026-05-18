@@ -101,6 +101,14 @@ jobs:
           docker tag redis:7-alpine ${{ steps.login-ecr.outputs.registry }}/fcg-redis:latest
           docker push ${{ steps.login-ecr.outputs.registry }}/fcg-redis:latest
 
+      - name: Mirror SQL Server image to ECR
+        shell: bash
+        run: |
+          aws ecr create-repository --repository-name fcg-sqlserver --region $AWS_REGION 2>/dev/null || true
+          docker pull mcr.microsoft.com/mssql/server:2022-latest
+          docker tag mcr.microsoft.com/mssql/server:2022-latest ${{ steps.login-ecr.outputs.registry }}/fcg-sqlserver:latest
+          docker push ${{ steps.login-ecr.outputs.registry }}/fcg-sqlserver:latest
+
       - name: Build and push users-api image
         run: |
           docker build -t ${{ env.USERS_IMAGE }} ./users-api_fase4

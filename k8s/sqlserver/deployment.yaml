@@ -19,7 +19,7 @@ spec:
         fsGroup: 10001
       containers:
         - name: sqlserver
-          image: mcr.microsoft.com/mssql/server:2022-latest
+          image: 759410591963.dkr.ecr.us-east-1.amazonaws.com/fcg-sqlserver:latest
           ports:
             - containerPort: 1433
           env:
