@@ -53,6 +53,9 @@ namespace Infrastructure.Services
                 )
             );
 
+            if (!response.IsValidResponse)
+                return new List<GameDto>();
+
             return response.Documents
                 .Select(d => new GameDto
                 {

@@ -99,7 +99,9 @@ var elasticsearchUrl = builder.Configuration["Elasticsearch:Url"]
     ?? builder.Configuration["ELASTICSEARCH_URL"]
     ?? "http://localhost:9200";
 
-var elasticsearchClient = new ElasticsearchClient(new Uri(elasticsearchUrl));
+var elasticsearchSettings = new ElasticsearchClientSettings(new Uri(elasticsearchUrl))
+    .RequestTimeout(TimeSpan.FromSeconds(10));
+var elasticsearchClient = new ElasticsearchClient(elasticsearchSettings);
 builder.Services.AddSingleton(elasticsearchClient);
 builder.Services.AddScoped<ISearchService, ElasticsearchSearchService>();
 #endregion
